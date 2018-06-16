@@ -1,3 +1,6 @@
 [submodule "AnotherDangParser"]
 	path = AnotherDangParser
 	url = https://github.com/Stephen-Seo/AnotherDangParser.git
+[submodule "GameDevTools"]
+	path = GameDevTools
+	url = https://github.com/Stephen-Seo/GameDevTools.git

@@ -3,8 +3,19 @@ cmake_minimum_required(VERSION 3.0)
 project(MeterForPulseAudio VERSION 1.0)
 
 set(MeterForPulseAudio_SOURCES
+    GameDevTools/src/GDT/GameLoop.cpp
     src/Main.cpp
+    src/MfPA/Meter.cpp
 )
+
+# check if submodules are loaded
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/AnotherDangParser/src")
+    message(FATAL_ERROR "AnotherDangParser submodule not loaded! Please run "
+        "'git submodule update --init --recursive'!")
+elseif(NOT EXISTS "${CMAKE_SOURCE_DIR}/GameDevTools/src")
+    message(FATAL_ERROR "GameDevTools submodule not loaded! Please run "
+        "'git submodule update --init --recursive'!")
+endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wpedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g")
@@ -38,13 +49,12 @@ target_include_directories(MeterForPulseAudio PUBLIC ${PULSEAUDIO_INCLUDE_DIR})
 target_link_libraries(MeterForPulseAudio PUBLIC ${PULSEAUDIO_LIBRARY})
 
 # add sub-project AnotherDangParser
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/AnotherDangParser/src")
-    message(FATAL_ERROR "AnotherDangParser submodule not loaded! Please run "
-        "'git submodule update --init --recursive'!")
-endif()
 add_subdirectory(AnotherDangParser)
 target_include_directories(MeterForPulseAudio PUBLIC AnotherDangParser/src)
 target_link_libraries(MeterForPulseAudio PUBLIC AnotherDangParser)
+
+# add parts of sub-project GameDevTools
+target_include_directories(MeterForPulseAudio PUBLIC GameDevTools/src)
 
 install(TARGETS MeterForPulseAudio
     RUNTIME DESTINATION bin
