@@ -27,9 +27,13 @@ endif()
 
 target_compile_features(MeterForPulseAudio PUBLIC cxx_std_14)
 
+find_package(SFML 2 REQUIRED COMPONENTS graphics window system)
+target_include_directories(MeterForPulseAudio PUBLIC ${SFML_INCLUDE_DIR})
+target_link_libraries(MeterForPulseAudio PUBLIC
+    sfml-graphics sfml-window sfml-system)
+
 find_package(PulseAudio 11 REQUIRED)
 message(STATUS "Found PulseAudio ${PulseAudio_VERSION}")
-
 target_include_directories(MeterForPulseAudio PUBLIC ${PULSEAUDIO_INCLUDE_DIR})
 target_link_libraries(MeterForPulseAudio PUBLIC ${PULSEAUDIO_LIBRARY})
 
