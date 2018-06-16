@@ -1,0 +1,3 @@
+[submodule "AnotherDangParser"]
+	path = AnotherDangParser
+	url = https://github.com/Stephen-Seo/AnotherDangParser.git
