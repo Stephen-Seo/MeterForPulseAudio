@@ -10,12 +10,16 @@ MfPA::Meter::Meter(const char* sinkOrSourceName, bool isSink) :
 currentState(WAITING),
 isMonitoringSink(isSink),
 sinkOrSourceName(sinkOrSourceName),
+mainLoop(nullptr),
+context(nullptr),
 stream(nullptr),
 runFlag(true)
 {
     setenv("PULSE_PROP_application.name", "Meter for PulseAudio", 1);
     setenv("PULSE_PROP_application.icon_name", "multimedia-volume-control", 1);
 
+    mainLoop = pa_mainloop_new();
+    pa_context_new(pa_mainloop_get_api(mainLoop), "Meter for PulseAudio");
     pa_context_set_state_callback(
         context,
         MfPA::Meter::get_context_callback,
@@ -29,6 +33,17 @@ MfPA::Meter::~Meter()
     {
         pa_stream_disconnect(stream);
         pa_stream_unref(stream);
+    }
+
+    if(context)
+    {
+        pa_context_disconnect(context);
+        pa_context_unref(context);
+    }
+
+    if(mainLoop)
+    {
+        pa_mainloop_free(mainLoop);
     }
 }
 
@@ -231,6 +246,7 @@ void MfPA::Meter::startMainLoop()
 
 void MfPA::Meter::update(float dt)
 {
+    pa_mainloop_iterate(mainLoop, 0, nullptr);
     if(currentState == TERMINATED || currentState == FAILED)
     {
         runFlag = false;

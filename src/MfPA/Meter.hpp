@@ -60,6 +60,7 @@ private:
     bool isMonitoringSink;
     const char* sinkOrSourceName;
 
+    pa_mainloop* mainLoop;
     pa_context* context;
     pa_stream* stream;
 
