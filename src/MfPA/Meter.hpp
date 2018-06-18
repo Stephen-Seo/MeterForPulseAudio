@@ -1,11 +1,15 @@
 #ifndef METER_FOR_PULSEAUDIO_HPP
 #define METER_FOR_PULSEAUDIO_HPP
 
-#include <pulse/pulseaudio.h>
+#define METER_DECAY_RATE 5.0f
+#define METER_PREV_DECAY_RATE 1.0f
 
-#include <mutex>
 #include <queue>
 #include <vector>
+
+#include <pulse/pulseaudio.h>
+
+#include <SFML/Graphics.hpp>
 
 namespace MfPA
 {
@@ -60,14 +64,28 @@ private:
     bool isMonitoringSink;
     const char* sinkOrSourceName;
 
+    bool gotSinkInfo;
+    bool gotSourceInfo;
+
     pa_mainloop* mainLoop;
     pa_context* context;
     pa_stream* stream;
 
-    std::mutex queueMutex;
     std::queue<std::vector<float>> sampleQueue;
 
     bool runFlag;
+
+    unsigned char channels;
+    std::vector<float> levels;
+    std::vector<std::tuple<float, float>> prevLevels;
+    std::vector<bool> levelsChanged;
+
+    sf::RenderWindow window;
+    sf::RectangleShape bar;
+
+#ifndef NDEBUG
+    float levelsPrintTimer;
+#endif
 
     void update(float dt);
     void draw();
