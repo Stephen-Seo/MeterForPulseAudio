@@ -228,8 +228,8 @@ void MfPA::Meter::get_source_info_callback(
 #ifndef NDEBUG
     std::cout << "Already got source info, end get_source_info_callback"
         << std::endl;
-        return;
 #endif
+        return;
     }
     if(eol != PA_OK)
     {
