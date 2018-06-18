@@ -1,7 +1,7 @@
 #ifndef METER_FOR_PULSEAUDIO_HPP
 #define METER_FOR_PULSEAUDIO_HPP
 
-#define METER_DECAY_RATE 5.0f
+#define METER_DECAY_RATE 2.0f
 #define METER_PREV_DECAY_RATE 1.0f
 
 #include <queue>
@@ -17,7 +17,12 @@ namespace MfPA
 class Meter
 {
 public:
-    Meter(const char* sinkOrSourceName = "", bool isSink = true);
+    Meter(
+        const char* sinkOrSourceName = "",
+        bool isSink = true,
+        unsigned int framerateLimit = 0,
+        sf::Color barColor = sf::Color::Green
+    );
     ~Meter();
 
     // callbacks required by pulseaudio
@@ -63,6 +68,7 @@ private:
     CurrentState currentState;
     bool isMonitoringSink;
     const char* sinkOrSourceName;
+    unsigned int framerateLimit;
 
     bool gotSinkInfo;
     bool gotSourceInfo;
@@ -82,6 +88,7 @@ private:
 
     sf::RenderWindow window;
     sf::RectangleShape bar;
+    sf::Color barColor;
 
 #ifndef NDEBUG
     float levelsPrintTimer;

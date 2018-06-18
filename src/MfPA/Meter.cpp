@@ -7,10 +7,16 @@
 
 #include <GDT/GameLoop.hpp>
 
-MfPA::Meter::Meter(const char* sinkOrSourceName, bool isSink) :
+MfPA::Meter::Meter(
+    const char* sinkOrSourceName,
+    bool isSink,
+    unsigned int framerateLimit,
+    sf::Color barColor
+) :
 currentState(WAITING),
 isMonitoringSink(isSink),
 sinkOrSourceName(sinkOrSourceName),
+framerateLimit(framerateLimit),
 gotSinkInfo(false),
 gotSourceInfo(false),
 mainLoop(nullptr),
@@ -18,10 +24,11 @@ context(nullptr),
 stream(nullptr),
 runFlag(true),
 channels(1),
-window(sf::VideoMode(100,400), "Meter for PulseAudio")
+window(sf::VideoMode(100,400), "Meter for PulseAudio"),
+barColor(barColor)
 {
     window.setView(sf::View(sf::FloatRect(0.0f, 0.0f, 1.0f, 1.0f)));
-    bar.setFillColor(sf::Color::Green);
+    bar.setFillColor(barColor);
 
     setenv("PULSE_PROP_application.name", "Meter for PulseAudio", 1);
     setenv("PULSE_PROP_application.icon_name", "multimedia-volume-control", 1);
@@ -344,7 +351,7 @@ void MfPA::Meter::startMainLoop()
         [this] () {
             draw();
         },
-        60,
+        framerateLimit,
         1.0f / 120.0f);
 }
 
@@ -440,8 +447,8 @@ void MfPA::Meter::draw()
     for(unsigned int i = 0; i < channels; ++i)
     {
         // prev levels
-        bar.setFillColor(sf::Color(
-            0, 255, 0, 255 * std::get<1>(prevLevels[i])));
+        barColor.a = 255 * std::get<1>(prevLevels[i]);
+        bar.setFillColor(barColor);
         bar.setSize(sf::Vector2f(
             1.0f / (float)channels,
             std::get<0>(prevLevels[i])));
@@ -450,7 +457,8 @@ void MfPA::Meter::draw()
             1.0f - std::get<0>(prevLevels[i])));
         window.draw(bar);
         // levels
-        bar.setFillColor(sf::Color::Green);
+        barColor.a = 255;
+        bar.setFillColor(barColor);
         bar.setSize(sf::Vector2f(
             1.0f / (float)channels,
             levels[i]));
