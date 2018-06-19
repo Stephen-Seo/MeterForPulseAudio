@@ -97,6 +97,8 @@ int main(int argc, char** argv)
 
     if(!parser.parse(argc, argv))
     {
+        std::cerr << "ERROR: Got invalid arguments! Try '-h' for usage info."
+            << std::endl;
         return 1;
     }
 
