@@ -1,3 +1,7 @@
+# Version 1.2
+
+Improved error output when failed getting info on sink/source.
+
 # Version 1.1
 
 Fixed error output on invalid sink/source and invalid arguments to program.

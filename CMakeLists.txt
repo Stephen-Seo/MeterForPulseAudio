@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(MeterForPulseAudio VERSION 1.1)
+project(MeterForPulseAudio VERSION 1.2)
 
 set(MeterForPulseAudio_SOURCES
     GameDevTools/src/GDT/GameLoop.cpp

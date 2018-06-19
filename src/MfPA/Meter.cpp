@@ -198,7 +198,8 @@ void MfPA::Meter::get_sink_info_callback(
     if(eol != PA_OK)
     {
         meter->currentState = MfPA::Meter::FAILED;
-        std::cerr << pa_strerror(pa_context_errno(c)) << std::endl;
+        std::cerr << "ERROR getting sink info: "
+            << pa_strerror(pa_context_errno(c)) << std::endl;
         return;
     }
     // get monitor-source of sink
@@ -234,7 +235,8 @@ void MfPA::Meter::get_source_info_callback(
     if(eol != PA_OK)
     {
         meter->currentState = MfPA::Meter::FAILED;
-        std::cerr << pa_strerror(pa_context_errno(c)) << std::endl;
+        std::cerr << "ERROR getting source info: "
+            << pa_strerror(pa_context_errno(c)) << std::endl;
         return;
     }
 
