@@ -1,3 +1,7 @@
+# Version 1.4
+
+Fix bug involving channel size.
+
 # Version 1.3
 
 Added feature to print available sinks/sources (invoked via arguments to

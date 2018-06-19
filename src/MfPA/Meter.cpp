@@ -24,6 +24,7 @@ context(nullptr),
 stream(nullptr),
 runFlag(true),
 channels(1),
+channelsChanged(true),
 window(sf::VideoMode(100,400), "Meter for PulseAudio"),
 barColor(barColor)
 {
@@ -242,6 +243,7 @@ void MfPA::Meter::get_source_info_callback(
     }
 
     meter->channels = i->sample_spec.channels;
+    meter->channelsChanged = true;
     pa_sample_spec sampleSpec;
     sampleSpec.format = PA_SAMPLE_FLOAT32LE;
     sampleSpec.rate = i->sample_spec.rate;
@@ -331,19 +333,8 @@ void MfPA::Meter::get_stream_data_callback(
 
 void MfPA::Meter::startMainLoop()
 {
-    // initialize levels
-    levels.resize(channels);
-    prevLevels.resize(channels);
-    levelsChanged.resize(channels);
-    for(unsigned int i = 0; i < channels; ++i)
-    {
-        levels[i] = 0.0f;
-        prevLevels[i] = std::make_tuple(0.0f, 0.0f);
-        levelsChanged[i] = false;
-    }
-
 #ifndef NDEBUG
-    levelsPrintTimer = 1.0f;
+    levelsPrintTimer = 0.0f;
 #endif
 
     GDT::IntervalBasedGameLoop(
@@ -379,6 +370,14 @@ void MfPA::Meter::update(float dt)
         }
     }
 
+    if(channelsChanged)
+    {
+        levels.resize(channels, 0.0f);
+        prevLevels.resize(channels, std::make_tuple(0.0f, 0.0f));
+        levelsChanged.resize(channels, false);
+        channelsChanged = false;
+    }
+
     for(unsigned int i = 0; i < channels; ++i)
     {
         levelsChanged[i] = false;
@@ -387,11 +386,11 @@ void MfPA::Meter::update(float dt)
     while(!sampleQueue.empty())
     {
         {
-            unsigned char currentChannel = 0;
             const auto& front = sampleQueue.front();
-            for(auto iter = front.begin(); iter != front.end(); ++iter)
+            for(unsigned int i = 0; i < front.size(); ++i)
             {
-                float fabs = std::abs(*iter);
+                float fabs = std::abs(front[i]);
+                unsigned char currentChannel = i % channels;
                 if(levels[currentChannel] < fabs)
                 {
                     levels[currentChannel] = fabs;
@@ -402,7 +401,6 @@ void MfPA::Meter::update(float dt)
                     std::get<0>(prevLevels[currentChannel]) = fabs;
                     std::get<1>(prevLevels[currentChannel]) = 1.0f;
                 }
-                currentChannel = (currentChannel + 1) % channels;
             }
         }
         sampleQueue.pop();
@@ -435,7 +433,8 @@ void MfPA::Meter::update(float dt)
     {
         for(unsigned int i = 0; i < channels; ++i)
         {
-            std::cout << "[" << i << "] " << levels[i] << " ";
+            std::cout << "[" << i << "] " << levels[i] << "_"
+                << std::get<0>(prevLevels[i]) << " ";
         }
         std::cout << std::endl;
         levelsPrintTimer = 1.0f;
@@ -447,28 +446,31 @@ void MfPA::Meter::draw()
 {
     window.clear();
 
-    for(unsigned int i = 0; i < channels; ++i)
-    {
-        // prev levels
-        barColor.a = 255 * std::get<1>(prevLevels[i]);
-        bar.setFillColor(barColor);
-        bar.setSize(sf::Vector2f(
-            1.0f / (float)channels,
-            std::get<0>(prevLevels[i])));
-        bar.setPosition(sf::Vector2f(
-            (float)i * 1.0f / (float)channels,
-            1.0f - std::get<0>(prevLevels[i])));
-        window.draw(bar);
-        // levels
-        barColor.a = 255;
-        bar.setFillColor(barColor);
-        bar.setSize(sf::Vector2f(
-            1.0f / (float)channels,
-            levels[i]));
-        bar.setPosition(sf::Vector2f(
-            (float)i * 1.0f / (float)channels,
-            1.0f - levels[i]));
-        window.draw(bar);
+    if(!channelsChanged)
+    { // don't draw until containers have been resized to channel amount
+        for(unsigned int i = 0; i < channels; ++i)
+        {
+            // prev levels
+            barColor.a = 255 * std::get<1>(prevLevels[i]);
+            bar.setFillColor(barColor);
+            bar.setSize(sf::Vector2f(
+                1.0f / (float)channels,
+                std::get<0>(prevLevels[i])));
+            bar.setPosition(sf::Vector2f(
+                (float)i * 1.0f / (float)channels,
+                1.0f - std::get<0>(prevLevels[i])));
+            window.draw(bar);
+            // levels
+            barColor.a = 255;
+            bar.setFillColor(barColor);
+            bar.setSize(sf::Vector2f(
+                1.0f / (float)channels,
+                levels[i]));
+            bar.setPosition(sf::Vector2f(
+                (float)i * 1.0f / (float)channels,
+                1.0f - levels[i]));
+            window.draw(bar);
+        }
     }
 
     window.display();

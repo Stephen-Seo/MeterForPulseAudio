@@ -82,6 +82,7 @@ private:
     bool runFlag;
 
     unsigned char channels;
+    bool channelsChanged;
     std::vector<float> levels;
     std::vector<std::tuple<float, float>> prevLevels;
     std::vector<bool> levelsChanged;
