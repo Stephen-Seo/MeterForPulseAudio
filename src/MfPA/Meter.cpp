@@ -34,7 +34,8 @@ barColor(barColor)
     setenv("PULSE_PROP_application.icon_name", "multimedia-volume-control", 1);
 
     mainLoop = pa_mainloop_new();
-    context = pa_context_new(pa_mainloop_get_api(mainLoop), "Meter for PulseAudio");
+    context = pa_context_new(
+        pa_mainloop_get_api(mainLoop), "Meter for PulseAudio");
     pa_context_set_state_callback(
         context,
         MfPA::Meter::get_context_callback,

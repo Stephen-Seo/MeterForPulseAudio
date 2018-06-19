@@ -1,3 +1,8 @@
+# Version 1.3
+
+Added feature to print available sinks/sources (invoked via arguments to
+program).
+
 # Version 1.2
 
 Improved error output when failed getting info on sink/source.

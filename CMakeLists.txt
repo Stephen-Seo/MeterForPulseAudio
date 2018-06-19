@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(MeterForPulseAudio VERSION 1.2)
+project(MeterForPulseAudio VERSION 1.3)
 
 set(MeterForPulseAudio_SOURCES
     GameDevTools/src/GDT/GameLoop.cpp
     src/Main.cpp
     src/MfPA/Meter.cpp
+    src/MfPA/GetSinkSourceInfo.cpp
 )
 
 # check if submodules are loaded

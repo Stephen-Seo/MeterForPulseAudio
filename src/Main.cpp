@@ -6,6 +6,7 @@
 
 #include <ADP/AnotherDangParser.hpp>
 #include "MfPA/Meter.hpp"
+#include "MfPA/GetSinkSourceInfo.hpp"
 
 int main(int argc, char** argv)
 {
@@ -86,6 +87,20 @@ int main(int argc, char** argv)
         },
         "Sets the bar color to a specified color (hex input like 0xFFFFFF, "
         "red is most significant byte out of 3)");
+    parser.addLongFlag("list-sinks",
+        [] () {
+            MfPA::GetSinkSourceInfo getInfo(true);
+            getInfo.startMainLoop();
+            std::exit(0);
+        },
+        "Lists available PulseAudio sinks");
+    parser.addLongFlag("list-sources",
+        [] () {
+            MfPA::GetSinkSourceInfo getInfo(false);
+            getInfo.startMainLoop();
+            std::exit(0);
+        },
+        "Lists available PulseAudio sources");
     parser.addFlag(
         "h",
         [&parser] () {
