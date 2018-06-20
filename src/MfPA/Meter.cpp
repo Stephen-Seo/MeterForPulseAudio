@@ -11,7 +11,8 @@ MfPA::Meter::Meter(
     const char* sinkOrSourceName,
     bool isSink,
     unsigned int framerateLimit,
-    sf::Color barColor
+    sf::Color barColor,
+    bool hideMarkings
 ) :
 currentState(WAITING),
 isMonitoringSink(isSink),
@@ -26,10 +27,29 @@ runFlag(true),
 channels(1),
 channelsChanged(true),
 window(sf::VideoMode(100,400), "Meter for PulseAudio"),
-barColor(barColor)
+barColor(barColor),
+inverted(~barColor.r, ~barColor.g, ~barColor.b),
+varray(sf::PrimitiveType::Lines, 2),
+hideMarkings(hideMarkings)
 {
     window.setView(sf::View(sf::FloatRect(0.0f, 0.0f, 1.0f, 1.0f)));
     bar.setFillColor(barColor);
+    if((int)inverted.r + (int)inverted.g + (int)inverted.b < 75)
+    {
+        inverted.r += (255 - inverted.r) / 1.4;
+        inverted.g += (255 - inverted.g) / 1.4;
+        inverted.b += (255 - inverted.b) / 1.4;
+    }
+    varray[0].color = sf::Color(barColor.r, ~barColor.g, ~barColor.b);
+    if((int)varray[0].color.r
+        + (int)varray[0].color.g
+        + (int)varray[0].color.b < 75)
+    {
+        varray[0].color.r += (255 - varray[0].color.r) / 1.4;
+        varray[0].color.g += (255 - varray[0].color.g) / 1.4;
+        varray[0].color.b += (255 - varray[0].color.b) / 1.4;
+    }
+    varray[1].color = varray[0].color;
 
     setenv("PULSE_PROP_application.name", "Meter for PulseAudio", 1);
     setenv("PULSE_PROP_application.icon_name", "multimedia-volume-control", 1);
@@ -349,6 +369,13 @@ void MfPA::Meter::startMainLoop()
         1.0f / 120.0f);
 }
 
+MfPA::Meter::Level::Level() :
+main(0.0f),
+prev(0.0f),
+prevTimer(0.0f),
+changed(false)
+{}
+
 void MfPA::Meter::update(float dt)
 {
     pa_mainloop_iterate(mainLoop, 0, nullptr);
@@ -372,15 +399,13 @@ void MfPA::Meter::update(float dt)
 
     if(channelsChanged)
     {
-        levels.resize(channels, 0.0f);
-        prevLevels.resize(channels, std::make_tuple(0.0f, 0.0f));
-        levelsChanged.resize(channels, false);
+        levels.resize(channels);
         channelsChanged = false;
     }
 
     for(unsigned int i = 0; i < channels; ++i)
     {
-        levelsChanged[i] = false;
+        levels[i].changed = false;
     }
 
     while(!sampleQueue.empty())
@@ -391,15 +416,15 @@ void MfPA::Meter::update(float dt)
             {
                 float fabs = std::abs(front[i]);
                 unsigned char currentChannel = i % channels;
-                if(levels[currentChannel] < fabs)
+                if(levels[currentChannel].main < fabs)
                 {
-                    levels[currentChannel] = fabs;
-                    levelsChanged[currentChannel] = true;
+                    levels[currentChannel].main = fabs;
+                    levels[currentChannel].changed = true;
                 }
-                if(std::get<0>(prevLevels[currentChannel]) < fabs)
+                if(levels[currentChannel].prev <= fabs)
                 {
-                    std::get<0>(prevLevels[currentChannel]) = fabs;
-                    std::get<1>(prevLevels[currentChannel]) = 1.0f;
+                    levels[currentChannel].prev = fabs;
+                    levels[currentChannel].prevTimer = 1.0f;
                 }
             }
         }
@@ -408,21 +433,21 @@ void MfPA::Meter::update(float dt)
 
     for(unsigned int i = 0; i < channels; ++i)
     {
-        if(!levelsChanged[i])
+        if(!levels[i].changed)
         {
-            levels[i] -= METER_DECAY_RATE * dt;
-            if(levels[i] < 0.0f)
+            levels[i].main -= METER_DECAY_RATE * dt;
+            if(levels[i].main < 0.0f)
             {
-                levels[i] = 0.0f;
+                levels[i].main = 0.0f;
             }
         }
-        if(std::get<1>(prevLevels[i]) > 0.0f)
+        if(levels[i].prevTimer > 0.0f)
         {
-            std::get<1>(prevLevels[i]) -= METER_PREV_DECAY_RATE * dt;
-            if(std::get<1>(prevLevels[i]) <= 0.0f)
+            levels[i].prevTimer -= METER_PREV_DECAY_RATE * dt;
+            if(levels[i].prevTimer <= 0.0f)
             {
-                std::get<0>(prevLevels[i]) = 0.0f;
-                std::get<1>(prevLevels[i]) = 0.0f;
+                levels[i].prev = 0.0f;
+                levels[i].prevTimer = 0.0f;
             }
         }
     }
@@ -433,8 +458,8 @@ void MfPA::Meter::update(float dt)
     {
         for(unsigned int i = 0; i < channels; ++i)
         {
-            std::cout << "[" << i << "] " << levels[i] << "_"
-                << std::get<0>(prevLevels[i]) << " ";
+            std::cout << "[" << i << "] " << levels[i].main << "_"
+                << levels[i].prev << " ";
         }
         std::cout << std::endl;
         levelsPrintTimer = 1.0f;
@@ -446,30 +471,59 @@ void MfPA::Meter::draw()
 {
     window.clear();
 
+    // don't draw until containers have been resized to channel amount
     if(!channelsChanged)
-    { // don't draw until containers have been resized to channel amount
+    {
         for(unsigned int i = 0; i < channels; ++i)
         {
             // prev levels
-            barColor.a = 255 * std::get<1>(prevLevels[i]);
-            bar.setFillColor(barColor);
+            if(levels[i].prev >= METER_UPPER_LIMIT)
+            {
+                inverted.a = 255 * levels[i].prevTimer;
+                bar.setFillColor(inverted);
+            }
+            else
+            {
+                barColor.a = 255 * levels[i].prevTimer;
+                bar.setFillColor(barColor);
+                barColor.a = 255;
+            }
             bar.setSize(sf::Vector2f(
                 1.0f / (float)channels,
-                std::get<0>(prevLevels[i])));
+                levels[i].prev));
             bar.setPosition(sf::Vector2f(
                 (float)i * 1.0f / (float)channels,
-                1.0f - std::get<0>(prevLevels[i])));
+                1.0f - levels[i].prev));
             window.draw(bar);
             // levels
-            barColor.a = 255;
             bar.setFillColor(barColor);
             bar.setSize(sf::Vector2f(
                 1.0f / (float)channels,
-                levels[i]));
+                levels[i].main));
             bar.setPosition(sf::Vector2f(
                 (float)i * 1.0f / (float)channels,
-                1.0f - levels[i]));
+                1.0f - levels[i].main));
             window.draw(bar);
+        }
+
+        if(!hideMarkings)
+        {
+            // draw lines at 0.75, 0.5, 0.25, and METER_UPPER_LIMIT
+            varray[0].position = sf::Vector2f(0.0f, 1.0f - METER_UPPER_LIMIT);
+            varray[1].position = sf::Vector2f(1.0f, 1.0f - METER_UPPER_LIMIT);
+            window.draw(varray);
+
+            varray[0].position = sf::Vector2f(0.0f, 0.25f);
+            varray[1].position = sf::Vector2f(1.0f, 0.25f);
+            window.draw(varray);
+
+            varray[0].position = sf::Vector2f(0.0f, 0.5f);
+            varray[1].position = sf::Vector2f(1.0f, 0.5f);
+            window.draw(varray);
+
+            varray[0].position = sf::Vector2f(0.0f, 0.75f);
+            varray[1].position = sf::Vector2f(1.0f, 0.75f);
+            window.draw(varray);
         }
     }
 

@@ -1,3 +1,10 @@
+# Version 1.5
+
+Color of previous max amount in meter is inverted after a certain threshold
+(0.98).  
+Add markings on meter (can be disabled in program arguments).  
+Minor cleanup.
+
 # Version 1.4
 
 Fix bug involving channel size.

@@ -14,6 +14,7 @@ int main(int argc, char** argv)
     bool isSink = true;
     unsigned int framerateLimit = 60;
     sf::Color color(sf::Color::Green);
+    bool hideMarkings = false;
 
     ADP::AnotherDangParser parser;
     parser.addLongOptionFlag(
@@ -101,6 +102,11 @@ int main(int argc, char** argv)
             std::exit(0);
         },
         "Lists available PulseAudio sources");
+    parser.addLongFlag("hide-markings",
+        [&hideMarkings] () {
+            hideMarkings = true;
+        },
+        "Hides the markings on the meter (default not hidden)");
     parser.addFlag(
         "h",
         [&parser] () {
@@ -117,7 +123,12 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    MfPA::Meter meter(sinkOrSourceName.c_str(), isSink, framerateLimit, color);
+    MfPA::Meter meter(
+        sinkOrSourceName.c_str(),
+        isSink,
+        framerateLimit,
+        color,
+        hideMarkings);
     meter.startMainLoop();
 
     return 0;

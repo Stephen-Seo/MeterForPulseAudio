@@ -3,6 +3,7 @@
 
 #define METER_DECAY_RATE 2.0f
 #define METER_PREV_DECAY_RATE 1.0f
+#define METER_UPPER_LIMIT 0.98f
 
 #include <queue>
 #include <vector>
@@ -21,7 +22,8 @@ public:
         const char* sinkOrSourceName = "",
         bool isSink = true,
         unsigned int framerateLimit = 0,
-        sf::Color barColor = sf::Color::Green
+        sf::Color barColor = sf::Color::Green,
+        bool hideMarkings = false
     );
     ~Meter();
 
@@ -83,13 +85,26 @@ private:
 
     unsigned char channels;
     bool channelsChanged;
-    std::vector<float> levels;
-    std::vector<std::tuple<float, float>> prevLevels;
-    std::vector<bool> levelsChanged;
+
+    struct Level
+    {
+        Level();
+
+        float main;
+        float prev;
+        float prevTimer;
+        bool changed;
+    };
+
+    std::vector<Level> levels;
 
     sf::RenderWindow window;
     sf::RectangleShape bar;
     sf::Color barColor;
+    sf::Color inverted;
+    sf::VertexArray varray;
+
+    bool hideMarkings;
 
 #ifndef NDEBUG
     float levelsPrintTimer;
