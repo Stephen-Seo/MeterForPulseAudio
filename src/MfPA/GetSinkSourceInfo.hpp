@@ -1,8 +1,6 @@
 #ifndef GET_SINK_SOURCE_INFO_HPP
 #define GET_SINK_SOURCE_INFO_HPP
 
-#define GET_SINK_SOURCE_INFO_ITERATION_TIME 1.0f
-
 #include <pulse/pulseaudio.h>
 
 namespace MfPA
@@ -33,7 +31,7 @@ private:
 
     pa_mainloop* mainLoop;
     pa_context* context;
-    bool isReady;
+    pa_operation* operation;
 
     bool run;
 

@@ -6,7 +6,7 @@
 
 MfPA::GetSinkSourceInfo::GetSinkSourceInfo(bool getSinkInfo) :
 getSinkInfo(getSinkInfo),
-isReady(false),
+operation(nullptr),
 run(true)
 {
     mainLoop = pa_mainloop_new();
@@ -21,6 +21,11 @@ run(true)
 
 MfPA::GetSinkSourceInfo::~GetSinkSourceInfo()
 {
+    if(operation)
+    {
+        pa_operation_unref(operation);
+    }
+
     if(context)
     {
         pa_context_disconnect(context);
@@ -44,22 +49,21 @@ void MfPA::GetSinkSourceInfo::get_state_callback(pa_context* c, void* userdata)
     case PA_CONTEXT_SETTING_NAME:
         break;
     case PA_CONTEXT_READY:
-        getInfo->isReady = true;
         if(getInfo->getSinkInfo)
         {
             std::cout << "Available sinks:" << std::endl;
-            pa_operation_unref(pa_context_get_sink_info_list(
+            getInfo->operation = pa_context_get_sink_info_list(
                 c,
                 MfPA::GetSinkSourceInfo::get_sink_info_callback,
-                userdata));
+                userdata);
         }
         else
         {
             std::cout << "Available sources:" << std::endl;
-            pa_operation_unref(pa_context_get_source_info_list(
+            getInfo->operation = pa_context_get_source_info_list(
                 c,
                 MfPA::GetSinkSourceInfo::get_source_info_callback,
-                userdata));
+                userdata);
         }
         break;
     case PA_CONTEXT_FAILED:
@@ -72,10 +76,10 @@ void MfPA::GetSinkSourceInfo::get_state_callback(pa_context* c, void* userdata)
 }
 
 void MfPA::GetSinkSourceInfo::get_sink_info_callback(
-    pa_context* c,
+    pa_context* /* c */,
     const pa_sink_info* i,
     int eol,
-    void* userdata)
+    void* /* userdata */)
 {
 //    MfPA::GetSinkSourceInfo* getInfo = (MfPA::GetSinkSourceInfo*) userdata;
     if(eol != PA_OK)
@@ -86,10 +90,10 @@ void MfPA::GetSinkSourceInfo::get_sink_info_callback(
 }
 
 void MfPA::GetSinkSourceInfo::get_source_info_callback(
-    pa_context* c,
+    pa_context* /* c */,
     const pa_source_info* i,
     int eol,
-    void* userdata)
+    void* /* userdata */)
 {
 //    MfPA::GetSinkSourceInfo* getInfo = (MfPA::GetSinkSourceInfo*) userdata;
     if(eol != PA_OK)
@@ -101,18 +105,16 @@ void MfPA::GetSinkSourceInfo::get_source_info_callback(
 
 void MfPA::GetSinkSourceInfo::startMainLoop()
 {
-    float timer = GET_SINK_SOURCE_INFO_ITERATION_TIME;
     GDT::IntervalBasedGameLoop(
         &run,
-        [this, &timer] (float dt) {
+        [this] (float /* dt */) {
             pa_mainloop_iterate(mainLoop, 0, nullptr);
-            if(isReady)
+            if(operation 
+                && pa_operation_get_state(operation) == PA_OPERATION_DONE)
             {
-                timer -= dt;
-                if(timer <= 0.0f)
-                {
-                    run = false;
-                }
+                pa_operation_unref(operation);
+                operation = nullptr;
+                run = false;
             }
         },
         [] () {},

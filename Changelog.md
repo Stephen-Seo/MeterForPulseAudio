@@ -1,3 +1,8 @@
+# Version 1.6
+
+Improve options "--list-sinks" and "--list-sources" (now halts after querying
+for sinks/sources has finished instead of waiting for 1 second to pass).
+
 # Version 1.5
 
 Color of previous max amount in meter is inverted after a certain threshold
