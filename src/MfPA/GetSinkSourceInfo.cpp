@@ -110,7 +110,7 @@ void MfPA::GetSinkSourceInfo::startMainLoop()
         [this] (float /* dt */) {
             pa_mainloop_iterate(mainLoop, 0, nullptr);
             if(operation 
-                && pa_operation_get_state(operation) == PA_OPERATION_DONE)
+                && pa_operation_get_state(operation) != PA_OPERATION_RUNNING)
             {
                 pa_operation_unref(operation);
                 operation = nullptr;

@@ -1,3 +1,8 @@
+# Version 1.7
+
+Fix listing sinks/sources to halt even when querying failed (previously, only
+halted on successful query of all sinks/sources).
+
 # Version 1.6
 
 Improve options "--list-sinks" and "--list-sources" (now halts after querying
