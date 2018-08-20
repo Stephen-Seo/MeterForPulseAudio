@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(MeterForPulseAudio VERSION 1.7)
+project(MeterForPulseAudio VERSION 1.8)
 
 set(MeterForPulseAudio_SOURCES
     GameDevTools/src/GDT/GameLoop.cpp
+    AnotherDangParser/src/ADP/AnotherDangParser.cpp
+    AnotherDangParser/src/ADP/HelpInfo.cpp
+    AnotherDangParser/src/ADP/OptionFlag.cpp
     src/Main.cpp
     src/MfPA/Meter.cpp
     src/MfPA/GetSinkSourceInfo.cpp
@@ -50,9 +53,7 @@ target_include_directories(MeterForPulseAudio PUBLIC ${PULSEAUDIO_INCLUDE_DIR})
 target_link_libraries(MeterForPulseAudio PUBLIC ${PULSEAUDIO_LIBRARY})
 
 # add sub-project AnotherDangParser
-add_subdirectory(AnotherDangParser)
 target_include_directories(MeterForPulseAudio PUBLIC AnotherDangParser/src)
-target_link_libraries(MeterForPulseAudio PUBLIC AnotherDangParser)
 
 # add parts of sub-project GameDevTools
 target_include_directories(MeterForPulseAudio PUBLIC GameDevTools/src)

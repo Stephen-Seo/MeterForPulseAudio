@@ -1,3 +1,8 @@
+# Version 1.8
+
+Compile AnotherDangParser as part of MeterForPulseAudio instead of compiling it
+as a separate library.
+
 # Version 1.7
 
 Fix listing sinks/sources to halt even when querying failed (previously, only
