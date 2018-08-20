@@ -69,6 +69,7 @@ void MfPA::GetSinkSourceInfo::get_state_callback(pa_context* c, void* userdata)
     case PA_CONTEXT_FAILED:
         std::cerr << "ERROR during context state callback: "
             << pa_strerror(pa_context_errno(c)) << std::endl;
+        // fall through
     case PA_CONTEXT_TERMINATED:
         getInfo->run = false;
         break;
